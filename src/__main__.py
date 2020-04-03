@@ -7,10 +7,13 @@ import math
 # Constants
 FRAMERATE = 60
 BLACK = 0, 0, 0
-GRAVITY = 0, -1 
 PLAYER_RADIUS = 1
 WALL_RADIUS = 1
 SPACE_SHOWN = 20
+PLAYER_DAMPING = 0.5
+PLAYER_GRAVITY = -23
+PLAYER_FLAP_IMPULSE = 20
+PLAYER_MASS = 1
 DEBUG = True
 
 # Init game
@@ -22,7 +25,10 @@ else: screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
 # Init physic space
 space = pymunk.Space()
-space.gravity = GRAVITY
+# TODO: Temporary maybe in the future we should use this gravity only for bird
+space.gravity = (0, PLAYER_GRAVITY)
+# TODO: Temporary maybe in the future we should use this damping only for bird
+space.damping = PLAYER_DAMPING
 
 class Camera:
     def __init__(self, x, y, zoom):
@@ -31,7 +37,7 @@ class Camera:
         """
         self.pos = (x, y)
         self.zoom = zoom
-        
+
     def trans_pos(self, pos):
         """Transform a position `(number, number)` into screen coordinate)"""
         return (self.pos + pos) * self.zoom
@@ -73,12 +79,42 @@ class DrawOptionsWithCamera(pymunk.pygame_util.DrawOptions):
         super().draw_segment(a, b, color)
 
 class Player:
+    """Player flap direction is has up component"""
+    dir_up = False
+
+    """Player flap direction is has down component"""
+    dir_down = False
+
+    """Player flap direction is has left component"""
+    dir_left = False
+
+    """Player flap direction is has right component"""
+    dir_right = False
+
     def __init__(self):
         """Player: add a circle body in the physic space"""
-        self.body = pymunk.Body(1, 1000)
+        self.body = pymunk.Body(PLAYER_MASS, 1000)
         self.body.position = 10, 10
         self.shape = pymunk.Circle(self.body, PLAYER_RADIUS)
+        self.body.velocity_func = self.velocity_func
         space.add(self.body, self.shape)
+
+    def velocity_func(self, body, gravity, damping, dt):
+        """velocity_func for player, currently use default pymunk.update_velocity"""
+        pymunk.Body.update_velocity(body, gravity, damping, dt)
+
+    def flap(self):
+        """Flap wings: add an impulse in a direction, direction must be a tuple with 2 number, does not need to be normalized"""
+
+        # Compute direction to target for the flap
+        dir = [self.dir_right - self.dir_left, self.dir_up - self.dir_down]
+        # Norm of the direction
+        norm = math.sqrt(dir[0]**2 + dir[1]**2)
+        # Do not flap if the direction is (0, 0)
+        if norm == 0: return
+        # Coef to the direction: normalize direction and multiply by PLAYER_FLAP_IMPULSE
+        coef = PLAYER_FLAP_IMPULSE / norm
+        self.body.apply_impulse_at_local_point((dir[0]*coef, dir[1]*coef))
 
 class Wall:
     def __init__(self):
@@ -86,45 +122,57 @@ class Wall:
         self.body = pymunk.Body(1, 1, pymunk.Body.STATIC)
         self.body.position = 0, 0
         a = 0, 0
-        b = 10, 0
+        b = 18, 0
         self.shape = pymunk.Segment(self.body, a, b, WALL_RADIUS)
         space.add(self.body, self.shape)
 
-# Instantiate physical objects
-player = Player()
-wall = Wall()
+if __name__ == "__main__":
+    # Instantiate physical objects
+    player = Player()
+    wall = Wall()
 
-# Instantiate camera
-camera = Camera(0, 0, screen.get_height()/SPACE_SHOWN)
+    # Instantiate camera
+    camera = Camera(0, 0, screen.get_height()/SPACE_SHOWN)
 
-# Instantiate debug_draw_options
-if DEBUG:
-    debug_draw_options = DrawOptionsWithCamera(screen)
-
-# Instantiate clock: it is used to clamp framerate.
-clock = pygame.time.Clock()
-
-# Main loop, this will be executed forever until the game finishs
-while True:
-
-    # Parse events
-    for event in pygame.event.get():
-        if (
-            event.type == pygame.QUIT or
-            event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
-        ):
-            sys.exit()
-
-    # Update world
-    space.step(0.2)
-
-    # Draw world
-    screen.fill(BLACK)
-
+    # Instantiate debug_draw_options
     if DEBUG:
-        space.DEBUG_draw(debug_draw_options)
-    
-    pygame.display.flip()
+        debug_draw_options = DrawOptionsWithCamera(screen)
 
-    # Wait for next frame
-    clock.tick(FRAMERATE)
+    # Instantiate clock: it is used to clamp framerate.
+    clock = pygame.time.Clock()
+
+    # Main loop, this will be executed forever until the game finishs
+    while True:
+        flap = False
+
+        # Parse events
+        for event in pygame.event.get():
+            if (
+                event.type == pygame.QUIT or
+                event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+            ):
+                sys.exit()
+            elif (event.type == pygame.KEYDOWN or event.type == pygame.KEYUP) and event.key == pygame.K_i:
+                player.dir_up = event.type == pygame.KEYDOWN
+            elif (event.type == pygame.KEYDOWN or event.type == pygame.KEYUP) and event.key == pygame.K_k:
+                player.dir_down = event.type == pygame.KEYDOWN
+            elif (event.type == pygame.KEYDOWN or event.type == pygame.KEYUP) and event.key == pygame.K_j:
+                player.dir_left = event.type == pygame.KEYDOWN
+            elif (event.type == pygame.KEYDOWN or event.type == pygame.KEYUP) and event.key == pygame.K_l:
+                player.dir_right = event.type == pygame.KEYDOWN
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                player.flap()
+
+        # Update world
+        space.step(1.0/FRAMERATE)
+
+        # Draw world
+        screen.fill(BLACK)
+
+        if DEBUG:
+            space.debug_draw(debug_draw_options)
+
+        pygame.display.flip()
+
+        # Wait for next frame
+        clock.tick(FRAMERATE)
