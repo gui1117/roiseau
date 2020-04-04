@@ -15,25 +15,12 @@ pygame.init()
 if cfg.DEBUG: screen = pygame.display.set_mode(size=(800, 600))
 else: screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
-
-class World:
-    """Game world, contains physic space and player"""
-
-    def __init__(self):
-        """Instantiate space physic and player to None"""
-        # Init physic space
-        self.space = pymunk.Space()
-        # TODO: Temporary maybe in the future we should use this gravity only for bird
-        self.space.gravity = (0, cfg.PLAYER_GRAVITY)
-        # TODO: Temporary maybe in the future we should use this damping only for bird
-        self.space.damping = cfg.PLAYER_DAMPING
-
-        # No player yet
-        self.player = None
+font = pygame.font.SysFont('', 20)
+game_over_surface = font.render("Game over", True, cfg.WHITE)
 
 if __name__ == "__main__":
     # Create the game world
-    world = World()
+    world = units.World()
 
     # Instantiate physical objects
     populate_from_svg.populate_with_file(world, 'dessin.svg')
@@ -72,7 +59,7 @@ if __name__ == "__main__":
                 if world.player:
                     world.player.dir_right = event.type == pygame.KEYDOWN
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                if world.player:
+                if world.player and not world.game_over:
                     world.player.flap()
 
         # Update world
@@ -87,6 +74,11 @@ if __name__ == "__main__":
 
         if cfg.DEBUG:
             world.space.debug_draw(debug_draw_options)
+
+        if world.game_over:
+            x = screen.get_width()/2 - game_over_surface.get_width()/2
+            y = screen.get_height()/2 - game_over_surface.get_height()/2
+            screen.blit(game_over_surface, (x, y))
 
         pygame.display.flip()
 

@@ -1,4 +1,4 @@
-"""Module containing all unit that can be spawn in the game"""
+"""Module containing all unit class and the world class"""
 
 import pymunk
 import cfg
@@ -28,6 +28,7 @@ class Player:
         self.body = pymunk.Body(cfg.PLAYER_MASS, 1000)
         self.body.position = pos
         self.shape = pymunk.Circle(self.body, cfg.PLAYER_RADIUS)
+        self.shape.collision_type = ColType.PLAYER
         self.body.velocity_func = self.velocity_func
         world.space.add(self.body, self.shape)
         world.player = self
@@ -74,4 +75,35 @@ class DeadlyWall:
         self.body = pymunk.Body(1, 1, pymunk.Body.STATIC)
         self.body.position = 0, 0
         self.shape = pymunk.Segment(self.body, start, end, cfg.WALL_RADIUS)
+        self.shape.collision_type = ColType.DEADLY_WALL
+        self.shape.color = cfg.RED
         world.space.add(self.body, self.shape)
+
+class World:
+    """Game world, contains physic space and optionally player"""
+
+    def __init__(self):
+        """Instantiate space physic and player to None"""
+        # Init physic space
+        self.space = pymunk.Space()
+        # TODO: Temporary maybe in the future we should use this gravity only for bird
+        self.space.gravity = (0, cfg.PLAYER_GRAVITY)
+        # TODO: Temporary maybe in the future we should use this damping only for bird
+        self.space.damping = cfg.PLAYER_DAMPING
+
+        player_deadly_wall_col = self.space.add_collision_handler(ColType.PLAYER, ColType.DEADLY_WALL)
+        player_deadly_wall_col.data['world'] = self
+        player_deadly_wall_col.begin = player_deadly_wall_col_begin
+
+        # No player yet
+        self.player = None
+        self.game_over = False
+
+class ColType():
+    """Collision types used by units"""
+    PLAYER = 0
+    DEADLY_WALL = 1
+
+def player_deadly_wall_col_begin(arbiter, space, data):
+    data['world'].game_over = True
+    return True

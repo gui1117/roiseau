@@ -31,7 +31,6 @@ class DrawOptionsWithCamera(pymunk.pygame_util.DrawOptions):
         super().__init__(screen)
         self.camera = camera
 
-
     def draw_circle(self, pos, angle, radius, outline_color, fill_color):
         """Change coordinate with camera and call draw_circle"""
         pos = self.camera.trans_pos(pos)
