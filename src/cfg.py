@@ -1,0 +1,12 @@
+"""Configuration module, contains various constants"""
+
+FRAMERATE = 60
+BLACK = 0, 0, 0
+PLAYER_RADIUS = 1
+WALL_RADIUS = 1
+SPACE_SHOWN = 40
+PLAYER_DAMPING = 0.5
+PLAYER_GRAVITY = -23
+PLAYER_FLAP_IMPULSE = 20
+PLAYER_MASS = 1
+DEBUG = True
