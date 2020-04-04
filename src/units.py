@@ -19,13 +19,18 @@ class Player:
     """Player flap direction is has right component"""
     dir_right = False
 
-    def __init__(self, space):
-        """Player: add a circle body in the physic space"""
+    def __init__(self, world, pos):
+        """
+        Player: add a circle body in the game world
+        pos: (float, float)
+        world: World
+        """
         self.body = pymunk.Body(cfg.PLAYER_MASS, 1000)
-        self.body.position = 10, 10
+        self.body.position = pos
         self.shape = pymunk.Circle(self.body, cfg.PLAYER_RADIUS)
         self.body.velocity_func = self.velocity_func
-        space.add(self.body, self.shape)
+        world.space.add(self.body, self.shape)
+        world.player = self
 
     def velocity_func(self, body, gravity, damping, dt):
         """velocity_func for player, currently use default pymunk.update_velocity"""
@@ -45,11 +50,28 @@ class Player:
         self.body.apply_impulse_at_local_point((dir[0]*coef, dir[1]*coef))
 
 class Wall:
-    def __init__(self, space):
-        """Wall: add a segment body in the physic space"""
+    def __init__(self, world, start, end):
+        """
+        Wall: add a segment body in the physic space
+        world: World
+        start: (float, float)
+        end: (float, float)
+        """
         self.body = pymunk.Body(1, 1, pymunk.Body.STATIC)
         self.body.position = 0, 0
-        a = 0, 0
-        b = 18, 0
-        self.shape = pymunk.Segment(self.body, a, b, cfg.WALL_RADIUS)
-        space.add(self.body, self.shape)
+        self.shape = pymunk.Segment(self.body, start, end, cfg.WALL_RADIUS)
+        world.space.add(self.body, self.shape)
+
+# TODO: on collision must kill the player
+class DeadlyWall:
+    def __init__(self, world, start, end):
+        """
+        Wall: add a segment body in the physic space
+        world: World
+        start: (float, float)
+        end: (float, float)
+        """
+        self.body = pymunk.Body(1, 1, pymunk.Body.STATIC)
+        self.body.position = 0, 0
+        self.shape = pymunk.Segment(self.body, start, end, cfg.WALL_RADIUS)
+        world.space.add(self.body, self.shape)
