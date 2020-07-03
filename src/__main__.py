@@ -1,19 +1,18 @@
-import pygame
+import cfg
+import populate_from_svg
+import units
+import utils
 import pymunk
 import pymunk.pygame_util
 import sys
 import math
-import utils
-import units
-import cfg
-import populate_from_svg
-
-# Init game
-pygame.init()
+import pygame
 
 # Set screen: surface on which everything is drawn
-if cfg.DEBUG: screen = pygame.display.set_mode(size=(800, 600))
-else: screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
+if cfg.DEBUG:
+    screen = pygame.display.set_mode(size=(800, 600))
+else:
+    screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
 font = pygame.font.SysFont('', 20)
 game_over_surface = font.render("Game over", True, cfg.WHITE)
@@ -24,9 +23,11 @@ if __name__ == "__main__":
 
     # Instantiate physical objects
     populate_from_svg.populate_with_file(world, 'dessin.svg')
+    # units.Flies(world)
 
     # Instantiate camera
-    camera = utils.Camera(0, 0, screen.get_width()/2, screen.get_height()/2, screen.get_height()/cfg.SPACE_SHOWN)
+    camera = utils.Camera(0, 0, screen.get_width(
+    )/2, screen.get_height()/2, screen.get_height()/cfg.SPACE_SHOWN)
 
     # Instantiate debug_draw_options
     if cfg.DEBUG:
@@ -39,6 +40,7 @@ if __name__ == "__main__":
     while True:
         flap = False
 
+# TODO: make that you have to press down a bit before flying: the times pressed is the force (with a maximum is current)
         # Parse events
         for event in pygame.event.get():
             if (
@@ -63,7 +65,10 @@ if __name__ == "__main__":
                     world.player.flap()
 
         # Update world
-        world.space.step(1.0/cfg.FRAMERATE)
+        dt = 1.0/cfg.FRAMERATE
+        for to_update in world.to_update:
+            to_update.update(world, dt)
+        world.space.step(dt)
 
         # Draw world
         screen.fill(cfg.BLACK)

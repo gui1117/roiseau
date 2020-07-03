@@ -1,5 +1,3 @@
-* constrain bird into the camera space
-* make the camera move?
 * make the camera zoom as user input ?
 * make two player
 * make birth

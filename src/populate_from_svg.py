@@ -38,6 +38,8 @@ def populate_with_path_element(world, element):
             populate_deadly_wall_from_path_d(world, path_d)
         elif value == '#00ff00':
             populate_player_from_path_d(world, path_d)
+        elif value == '#0000ff':
+            populate_jumper_from_path_d(world, path_d)
 
 
 def populate_wall_from_path_d(world, path):
@@ -63,3 +65,9 @@ def populate_player_from_path_d(world, path):
     x = path[0].point(0).real
     y = -path[0].point(0).imag
     units.Player(world, (x, y))
+
+def populate_jumper_from_path_d(world, path):
+    """Instantiate a player using an svg path element d attribute"""
+    x = path[0].point(0).real
+    y = -path[0].point(0).imag
+    units.Jumper(world, (x, y))
